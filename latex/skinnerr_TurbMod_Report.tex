@@ -90,23 +90,23 @@ Fundamentally, the SA model solves a transport equation for the pseudo-eddy visc
 	\end{aligned} \\[0.5cm]
 	&\begin{aligned}
 		\mathllap{\nu_T} &= \tilde{\nu} f_{v1}
-		\;, &\qquad
+		&\qquad
 		f_{v1} &= \frac{\chi^3}{\chi^3 + c_{v1}^3}
-		\;, &\qquad
+		&\qquad
 		\chi &= \frac{\tilde{\nu}}{\nu}
-		\;, \\
+		\\
 		\mathllap{\tilde{\Omega}} &= \Omega + \frac{\tilde{\nu}}{\kappa^2 d^2} f_{v2}
-		\;, &\qquad
+		&\qquad
 		f_{v2} &= 1 - \frac{\chi}{1 + \chi f_{v1}}
-		\;, &\qquad
+		&\qquad
 		\Omega &= \sqrt{2 \omega_{ij} \omega_{ij}}
-		\;, \\
+		\\
 		\mathllap{\omega_{ij}} &= \frac{1}{2} \left( \pp{u_i}{x_j} - \pp{u_j}{x_i} \right)
-		\;, &\qquad
+		&\qquad
 		f_w &= g \left[ \frac{1 + c_{w3}^6}{g^6 + c_{w3}^6} \right]^{1/6}
-		\!\!, &\qquad
+		&\qquad
 		g &= r + c_{w2}(r^6 - r)
-		\;, \\
+		\\
 		&&&&
 		r &= \min \left[ \frac{\tilde{\nu}}{\tilde{S} \kappa^2 d^2}, 10 \right]
 		\;,
@@ -114,26 +114,28 @@ Fundamentally, the SA model solves a transport equation for the pseudo-eddy visc
 	\end{aligned} \\[0.5cm]
 	&\begin{aligned}
 		\mathllap{c_{b1}} &= 0.1355
-		\;, &\quad
+		&\quad
 		c_{b2} &= 0.622
-		\;, &\quad
+		&\quad
 		\sigma &= 2/3
-		\;, &\quad
+		&\quad
 		\kappa &= 0.41
-		\;, \\
+		\\
 		\mathllap{c_{v1}} &= 7.1
-		\;, &\quad
+		&\quad
 		c_{w2} &= 0.3
-		\;, &\quad
+		&\quad
 		c_{w3} &= 2
-		\;, &\quad
+		&\quad
 		c_{w1} &= \frac{c_{b1}}{\kappa^2} + \frac{1 + c_{b2}}{\sigma}
 		\;.
 		\label{eq:SA_constants}
 	\end{aligned}
 \end{align}
 
-\subsection{Shur Curvature-Correction}
+\subsection{Spalart-Shur Curvature-Correction}
+
+The key concepts underpinning the RC-correction were proposed by \citet{spalart1997}, and are understandably similar to those used in developing the SA model.
 
 Developed by \citet{shur2000}, the method of accounting for streamline curvature in the standard SA model is relatively simple. In our PHASTA implementation, we assume a stationary reference frame. Thus $\Omega_m' = 0$ in the referenced paper, and Coriolos terms vanish. With this assumption, the only modification required to the standard SA-noft2 model is to multiply the production term $c_{b1} \tilde{S} \tilde{\nu}$ in \eqref{eq:SA_transport} by a rotation function $f_{r1}$, where
 \begin{align}
