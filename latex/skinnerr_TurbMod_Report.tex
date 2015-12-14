@@ -52,9 +52,9 @@ The Spalart-Allmaras (SA) one equation turbulence model captures important featu
 \end{itemize}
 In all cases, the authors demonstrate substantial improvements of the SARC model over the standard SA model and in most cases the Menter two-equation shear stress transport (M-SST). These conclusions are based on predictions of mean velocity and wall shear stress distributions.
 
-In the present project, the \citet{shur2000} RC-correction is added to the existing SA model in PHASTA, the Parallel Hierarchic Adaptive Transient Analysis CFD code developed and maintained by Prof.\ Kenneth E.\ Jansen's group at the University of Colorado at Boulder. Our implementation is tested on the 90\degree-bend case listed above, and validated against both the SA and SARC data of \citet{shur2000} and the experimental data of \citet{kim1994}.
+In the present project, the \citet{shur2000} RC-correction is added to the existing SA model in PHASTA, the Parallel Hierarchic Adaptive Transient Analysis CFD code developed and maintained by Prof.\ Kenneth E.\ Jansen's group at the University of Colorado at Boulder. Our group focuses on aerodynamic flow control, which in many cases simplifies to ``the pursuit of bent streamlines''. Thus, the ability to run RC-corrected RANS simulations will be a welcome addition to our research capabilities. To test the implementation's correctness, we simulate the 90\degree-bend case listed above, verify it using both the SA and SARC data of \citet{shur2000}, and validate it against the experimental data of \citet{kim1994}.
 
-
+With the motivation clear, the remainder of this paper discusses the philosophy underpinning the mathematics of the RC-correction; the changes made to PHASTA during implementation; and the validation procedures employed, including geometry construction, meshing, and comparison to the published data mentioned above.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -62,9 +62,13 @@ In the present project, the \citet{shur2000} RC-correction is added to the exist
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Spalart-Allmaras (SA-noft2)}
+\subsection{Spalart-Allmaras}
 
-The standard Spalart-Allmaras (SA) one-equation model \cite{spalart1992} implemented in PHASTA omits the trip term (SA-noft2) from the original paper and uses the vorticity magnitude as the scalar norm of the deformation tensor. The model, as implemented, can be written in full detail as
+As the standard Spalart-Allmaras (SA) one-equation model \cite{spalart1992} is our point of departure for the RC-correction, a brief overview is apropos.
+
+The SA model was developed as a middle-ground between algebraic and two-equation models. It sought to address algebraic models' shortcomings in massively-separated flows, while retaining some advantages of two-equation models and forgoing their additional computational complexity. It is tuned specifically for aerodynamic flows, which can exhibit substantial separation and involve complex geometries. Its derivation starts from a blank slate; production, transport, and diffusion terms are constructed from scratch using dimensional and invariance arguments applied to four canonical flows.
+
+Fundamentally, the SA model solves a transport equation for the pseudo-eddy viscosity $\tilde{\nu}$, which is calibrated to behave properly within the log layer, and then scales it to the canonical eddy viscosity $\nu_T$ in a manner consistent with the viscous sublayer. PHASTA's current version of the SA model omits the original reference's trip term\footnote{Technically, PHASTA's version of the SA model corresponds to SA-noft2 on the NASA Turbulence Modelling Resource website.}, and chooses the vorticity magnitude as the scalar norm of the deformation tensor. The model, as implemented, can be written in full detail as
 \begin{align}
 	\phantom{W_{ij}}
 	&\begin{aligned}
@@ -83,7 +87,7 @@ The standard Spalart-Allmaras (SA) one-equation model \cite{spalart1992} impleme
 		\right]
 		\;,
 		\label{eq:SA_transport}
-	\end{aligned} \\[0.25cm]
+	\end{aligned} \\[0.5cm]
 	&\begin{aligned}
 		\mathllap{\nu_T} &= \tilde{\nu} f_{v1}
 		\;, &\qquad
@@ -107,7 +111,7 @@ The standard Spalart-Allmaras (SA) one-equation model \cite{spalart1992} impleme
 		r &= \min \left[ \frac{\tilde{\nu}}{\tilde{S} \kappa^2 d^2}, 10 \right]
 		\;,
 		\label{eq:SA_definitions}
-	\end{aligned} \\
+	\end{aligned} \\[0.5cm]
 	&\begin{aligned}
 		\mathllap{c_{b1}} &= 0.1355
 		\;, &\quad
@@ -128,9 +132,8 @@ The standard Spalart-Allmaras (SA) one-equation model \cite{spalart1992} impleme
 		\label{eq:SA_constants}
 	\end{aligned}
 \end{align}
-The SA model solves a transportation for the pseudo-eddy viscosity $\tilde{\nu}$, which is calibrated for the log layer, and then scales to the canonical eddy viscosity $\nu_T$ in a manner consistent with the viscous sublayer.
 
-\subsection{Curvature-Corrected Spalart-Allmaras (SA-noft2-RC)}
+\subsection{Shur Curvature-Correction}
 
 Developed by \citet{shur2000}, the method of accounting for streamline curvature in the standard SA model is relatively simple. In our PHASTA implementation, we assume a stationary reference frame. Thus $\Omega_m' = 0$ in the referenced paper, and Coriolos terms vanish. With this assumption, the only modification required to the standard SA-noft2 model is to multiply the production term $c_{b1} \tilde{S} \tilde{\nu}$ in \eqref{eq:SA_transport} by a rotation function $f_{r1}$, where
 \begin{align}
