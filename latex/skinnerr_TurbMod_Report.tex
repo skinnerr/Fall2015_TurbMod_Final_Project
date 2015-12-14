@@ -1,0 +1,223 @@
+\documentclass[11pt]{article}
+
+\input{preamble.tex}
+
+%%
+%% DOCUMENT START
+%%
+
+\begin{document}
+
+\pagestyle{fancyplain}
+\lhead{}
+\chead{}
+\rhead{}
+\lfoot{\hrule ASEN 6519}
+\cfoot{\hrule \thepage}
+\rfoot{\hrule Ryan Skinner}
+
+\noindent
+{\Large Final Project}
+\hfill
+{\large Ryan Skinner}
+\\[0.5ex]
+{\large ASEN 6519: Turbulence Modelling}
+\hfill
+{\large Due 2015/12/15}\\
+\hrule
+\vspace{6pt}
+
+\vspace{0.5in}
+\begin{center}
+\LARGE Implementation and Validation of the Spalart-Allmaras \\ Curvature Correction in PHASTA
+\end{center}
+\vspace{0.2in}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction} %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+It is well-known that the presence of rotation and streamline curvature (RC) substantially alter the physics of turbulent shear flows. \citet{bradshaw1973} notes that these changes are ``surprisingly large,'' in that they are usually ``an order of magnitude more important than normal pressure gradients and other explicit terms'' in the RANS equations for curved flows. This leads to significant effects on shear stresses and other quantities when the stream-wise radius of curvature is as small as one-hundredth of the shear layer thickness \citep{bradshaw1973}. For aerodynamicists in particular, RC phenomena have high impact on boundary layer development, turbulent mixing, and heat transfer in applications ranging from flow over high-camber airfoils to rapidly-rotating turbomachinery blades.
+
+For computational studies to effectively guide developments in design areas dominated by RC-effects, it is imperative that the turbulence models employed capture these effects in some way. Reynolds stress transport (RST) models commonly held superior to simpler eddy-viscosity models, because RC-terms appear explicitly in the Reynolds transport equation. Despite their accuracy, full RST models are much more costly, and adding an RC-correction term to the latter class of models would be a boon for workflows that require rapid design iteration.
+
+The Spalart-Allmaras (SA) one equation turbulence model captures important features of aerodynamic flows involving complex geometry and adverse pressure gradients well, and is thus one of the most appropriate eddy-viscosity models for such studies \citep{spalart1992}. However, the original model neglects the effects of streamline curvature and rotation. To better capture these effects, \citet{shur2000} introduce an RC-correction, resulting in the SARC model. They validate their correction against experimental and DNS data of a number of canonical wall-bounded turbulent shear flows: 
+\begin{itemize}
+\item one-dimensional, fully-developed flow in a plane rotating channel,
+\item one-dimensional, fully-developed flow in a curved channel,
+\item two-dimensional flow in a channel with a U-turn, and
+\item three-dimensional flow in a channel of rectangular cross-section with a 90\degree streamwise bend.
+\end{itemize}
+In all cases, the authors demonstrate substantial improvements of the SARC model over the standard SA model and in most cases the Menter two-equation shear stress transport (M-SST). These conclusions are based on predictions of mean velocity and wall shear stress distributions.
+
+In the present project, the \citet{shur2000} RC-correction is added to the existing SA model in PHASTA, the Parallel Hierarchic Adaptive Transient Analysis CFD code developed and maintained by Prof.\ Kenneth E.\ Jansen's group at the University of Colorado at Boulder. Our implementation is tested on the 90\degree-bend case listed above, and validated against both the SA and SARC data of \citet{shur2000} and the experimental data of \citet{kim1994}.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Model Equations} %%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Spalart-Allmaras (SA-noft2)}
+
+The standard Spalart-Allmaras (SA) one-equation model \cite{spalart1992} implemented in PHASTA omits the trip term (SA-noft2) from the original paper and uses the vorticity magnitude as the scalar norm of the deformation tensor. The model, as implemented, can be written in full detail as
+\begin{align}
+	\phantom{W_{ij}}
+	&\begin{aligned}
+		\mathllap{\pp{\tilde{\nu}}{t}}
+		&+ u_j \pp{\tilde{\nu}}{x_j}
+		=
+		c_{b1} \tilde{\Omega} \tilde{\nu}
+		-
+		c_{w1} f_w \left( \frac{\tilde{\nu}}{d} \right)^2
+		+
+		\frac{1}{\sigma} 
+		\left[
+		\pp{}{x_j}
+			\left( (\nu + \tilde{\nu}) \pp{\tilde{\nu}}{x_j} \right)
+			+ c_{b2} \pp{\tilde{\nu}}{x_j} \pp{\tilde{\nu}}{x_j}
+		\right]
+		\;,
+		\label{eq:SA_transport}
+	\end{aligned} \\[0.25cm]
+	&\begin{aligned}
+		\mathllap{\nu_T} &= \tilde{\nu} f_{v1}
+		\;, &\qquad
+		f_{v1} &= \frac{\chi^3}{\chi^3 + c_{v1}^3}
+		\;, &\qquad
+		\chi &= \frac{\tilde{\nu}}{\nu}
+		\;, \\
+		\mathllap{\tilde{\Omega}} &= \Omega + \frac{\tilde{\nu}}{\kappa^2 d^2} f_{v2}
+		\;, &\qquad
+		f_{v2} &= 1 - \frac{\chi}{1 + \chi f_{v1}}
+		\;, &\qquad
+		\Omega &= \sqrt{2 \omega_{ij} \omega_{ij}}
+		\;, \\
+		\mathllap{\omega_{ij}} &= \frac{1}{2} \left( \pp{u_i}{x_j} - \pp{u_j}{x_i} \right)
+		\;, &\qquad
+		f_w &= g \left[ \frac{1 + c_{w3}^6}{g^6 + c_{w3}^6} \right]^{1/6}
+		\!\!, &\qquad
+		g &= r + c_{w2}(r^6 - r)
+		\;, \\
+		&&&&
+		r &= \min \left[ \frac{\tilde{\nu}}{\tilde{S} \kappa^2 d^2}, 10 \right]
+		\;,
+		\label{eq:SA_definitions}
+	\end{aligned} \\
+	&\begin{aligned}
+		\mathllap{c_{b1}} &= 0.1355
+		\;, &\quad
+		c_{b2} &= 0.622
+		\;, &\quad
+		\sigma &= 2/3
+		\;, &\quad
+		\kappa &= 0.41
+		\;, \\
+		\mathllap{c_{v1}} &= 7.1
+		\;, &\quad
+		c_{w2} &= 0.3
+		\;, &\quad
+		c_{w3} &= 2
+		\;, &\quad
+		c_{w1} &= \frac{c_{b1}}{\kappa^2} + \frac{1 + c_{b2}}{\sigma}
+		\;.
+		\label{eq:SA_constants}
+	\end{aligned}
+\end{align}
+The SA model solves a transportation for the pseudo-eddy viscosity $\tilde{\nu}$, which is calibrated for the log layer, and then scales to the canonical eddy viscosity $\nu_T$ in a manner consistent with the viscous sublayer.
+
+\subsection{Curvature-Corrected Spalart-Allmaras (SA-noft2-RC)}
+
+Developed by \citet{shur2000}, the method of accounting for streamline curvature in the standard SA model is relatively simple. In our PHASTA implementation, we assume a stationary reference frame. Thus $\Omega_m' = 0$ in the referenced paper, and Coriolos terms vanish. With this assumption, the only modification required to the standard SA-noft2 model is to multiply the production term $c_{b1} \tilde{S} \tilde{\nu}$ in \eqref{eq:SA_transport} by a rotation function $f_{r1}$, where
+\begin{align}
+	&\begin{aligned}
+		\mathllap{f_{r1}} = (1 + c_{r1}) \frac{2 r^*}{1 + r^*} \left[ 1 - c_{r3} \arctan(c_{r2} \tilde{r}) \right] - c_{r1}
+		\;,
+		\label{eq:SARC_rotation_function}
+	\end{aligned}\\[0.25cm]
+	\phantom{f_{r1}}
+	&\begin{aligned}
+		\mathllap{r^*} &= S / \Omega
+		\;, &\qquad
+		\tilde{r} &= \frac{2 \omega_{ik} S_{jk}}{D^4} \left( \frac{D S_{ij}}{D t} \right)
+		\;, &\qquad
+		S_{ij} &= \frac{1}{2} \left( \pp{u_i}{x_j} + \pp{u_j}{x_i} \right)
+		\;, \\
+		\mathllap{S^2} &= 2 S_{ij} S_{ij}
+		\;, &\qquad
+		\Omega^2 &= 2 \omega_{ij} \omega_{ij}
+		\;, &\qquad
+		D^2 &= (S^2 + \Omega^2) / 2
+		\label{eq:SARC_definitions}
+	\end{aligned}\\[0.25cm]
+	&\begin{aligned}
+		\mathllap{c_{r1}} &= 1.0
+		\;, \quad
+		c_{r2} = 12
+		\;, \quad
+		c_{r3} = 1.0
+		\;.
+		\label{eq:SARC_constants}
+	\end{aligned}
+\end{align}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{PHASTA Implementation} %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The SA-noft2 model has already been implemented in PHASTA, so we must only calculate and pre-multiply the production term by $f_{r1}$. The material derivative of the strain tensor, $DS_{ij}/Dt$, in \eqref{eq:SARC_definitions} makes this process slightly more complicated than initially expected. Here, we describe the process used to compute $f_{r1}$ conceptually and in code.
+
+\subsection{Mathematics}
+
+We can write the proper definition of $DS_{ij}/Dt$ as
+\begin{equation}
+\frac{DS_{ij}}{Dt}
+\equiv
+\left( \pp{}{t} + u_k \pp{}{x_k} \right) S_{ij}
+=
+\left( \pp{}{t} + u_k \pp{}{x_k} \right)
+\frac{1}{2} \left( \pp{u_i}{x_j} + \pp{u_j}{x_i} \right)
+\;,
+\end{equation}
+from which it is clear that we need to compute two kinds of terms within the code: the temporal derivatives and spatial gradients of the velocity gradient tensor $\partial u_i / \partial x_j$.
+
+For the time term, we can interchange the order of differentiation due to the continuum assumption,
+\begin{equation}
+\pp{}{t} \pp{u_i}{x_j}
+=
+\pp{}{x_j} \pp{u_i}{t}
+=
+\pp{}{x_j} a_i
+\;,
+\end{equation}
+where $a_i$ is the fluid acceleration, which is already computed during each flow solve. The spatial derivatives of $a_i$ can then be computed using shape function gradients in the manner standard to finite element analysis. That is, (math here from FEM)......
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Model Validation} %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Appendix A: PHASTA Code} %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+All changes discussed here pertain to the incompressible code, including files common to both when appropriate.
+
+In \li{input_fform.f}, the entry \li{RANS-SARC} is added to represent this turbulence model in \li{input.config}.
+
+\bibliographystyle{plainnat}
+\bibliography{sources}
+
+%%
+%% DOCUMENT END
+%%
+\end{document}
