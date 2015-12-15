@@ -201,7 +201,7 @@ Increased computational demand aside, $\tilde{r}$ can be used to construct a sca
 		\label{eq:SARC_constants}
 	\end{aligned}
 \end{align}
-This rotation function protects against the case of isotropic stresses mentioned above; though $\tilde{r}$ may blow up as the strain tensor vanishes, $f_{r1}$ effectively turns itself off through the $r^*$ terms. The model constants are tuned using joint numerical-experimental data from \citet{dacles1995}. \citep{shur2000} note that these constants are still being tuned, and that for a backward-facing step, they found a value of $c_{r3} = 0.6$ instead of 1 to be more appropriate. Nonetheless, the NASA Turbulence Modelling Resource website lists the values given in \eqref{eq:SARC_constants} as reliable, and we use them accordingly in our own implementation.
+This rotation function protects against the case of isotropic stresses mentioned above; though $\tilde{r}$ may blow up as the strain tensor vanishes, $f_{r1}$ effectively turns itself off through the $r^*$ terms. Note that for our original example of shear flows with no curvature, $r^* = 1$, $\tilde{r} = 0$, and the constraint that the original SA model be recovered through $f_{r1} \rightarrow 1$ is satisfied. The model constants are tuned using joint numerical-experimental data from \citet{dacles1995}. \citep{shur2000} note that these constants are still being tuned, and that for a backward-facing step, they found a value of $c_{r3} = 0.6$ instead of 1 to be more appropriate. Nonetheless, the NASA Turbulence Modelling Resource website lists the values given in \eqref{eq:SARC_constants} as reliable, and we use them accordingly in our own implementation.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -209,7 +209,7 @@ This rotation function protects against the case of isotropic stresses mentioned
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The SA-noft2 model has already been implemented in PHASTA, so we must only calculate and pre-multiply the production term by $f_{r1}$. The material derivative of the strain tensor, $DS_{ij}/Dt$, in \eqref{eq:SARC_definitions} makes this process slightly more complicated than initially expected. Here, we describe the process used to compute $f_{r1}$ conceptually and in code.
+Since the standard SA model has already been implemented in PHASTA, our only task is to calculate and pre-multiply its production term by $f_{r1}$. The material derivative of the strain tensor, $DS_{ij}/Dt$, in \eqref{eq:SARC_definitions} made this process slightly more complicated than initially anticipated, but not overly so. In this section, we describe the process used to compute $f_{r1}$ conceptually and in code.
 
 \subsection{Mathematics}
 
