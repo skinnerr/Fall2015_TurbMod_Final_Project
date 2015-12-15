@@ -43,7 +43,7 @@ It is well-known that the presence of rotation and streamline curvature (RC) sub
 
 For computational studies to effectively guide developments in design areas dominated by RC-effects, it is imperative that the turbulence models employed capture their influence in some way. Reynolds stress transport (RST) models are sometimes viewed as superior to simpler eddy-viscosity models, because RC terms appear explicitly in the Reynolds transport equation. However, this explicit influence is limited to the production term, and there appears to be little consensus on how rotation and curvature influence the other diffusion and destruction terms \citep{spalart1997}. Despite the philosophical advantages that may exist, the accuracy of full RST models comes at substantial computational cost. Accordingly, adding an RC-correction term to the latter class of models would be a boon for workflows that require rapid design iteration.
 
-The Spalart-Allmaras (SA) one equation turbulence model captures important features of aerodynamic flows involving complex geometry and adverse pressure gradients well, and is thus one of the most appropriate eddy-viscosity models for such studies \citep{spalart1992}. However, the original model neglects the effects of streamline curvature and rotation. To remedy this, \citet{shur2000} develop an RC-correction term that scales eddy viscosity production, giving rise to the SARC model. They validate their correction against experimental and DNS data of a number of canonical wall-bounded turbulent shear flows: 
+The Spalart-Allmaras (SA) one equation turbulence model captures important features of aerodynamic flows involving complex geometry and adverse pressure gradients well, and is thus one of the most appropriate eddy-viscosity models for such studies \citep{spalart1992}. However, the original model neglects the effects of streamline curvature and rotation. To remedy this, \citet{shur2000} develop an RC-correction term that scales eddy-viscosity production, giving rise to the SARC model. They validate their correction against experimental and DNS data of a number of canonical wall-bounded turbulent shear flows: 
 \begin{itemize}
 \item one-dimensional, fully-developed flow in a plane rotating channel,
 \item one-dimensional, fully-developed flow in a curved channel,
@@ -58,17 +58,15 @@ With the motivation clear, the remainder of this paper discusses the philosophy 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Model Equations} %%%%%%%%%%%%%%%%%%%%%%%
+\section{Spalart-Allmaras Model} %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Spalart-Allmaras}
 
 As the standard Spalart-Allmaras (SA) one-equation model \cite{spalart1992} is our point of departure for the RC-correction, a brief overview is apropos.
 
 The SA model was developed as a middle-ground between algebraic and two-equation models. It sought to address algebraic models' shortcomings in massively-separated flows, while retaining some advantages of two-equation models and forgoing their additional computational complexity. It is tuned specifically for aerodynamic flows, which can exhibit substantial separation and involve complex geometries. Its derivation starts from a blank slate; production, transport, and diffusion terms are constructed from scratch using dimensional and invariance arguments applied to four canonical flows.
 
-Fundamentally, the SA model solves a transport equation for the pseudo-eddy viscosity $\tilde{\nu}$, which is calibrated to behave properly within the log layer, and then scales it to the canonical eddy viscosity $\nu_T$ in a manner consistent with the viscous sublayer. PHASTA's current version of the SA model omits the original reference's trip term\footnote{Technically, PHASTA's version of the SA model corresponds to SA-noft2 on the NASA Turbulence Modelling Resource website.}, and chooses the vorticity magnitude as the scalar norm of the deformation tensor. The model, as implemented, can be written in full detail as
+Fundamentally, the SA model solves a transport equation for the pseudo-eddy-viscosity $\tilde{\nu}$, which is calibrated to behave properly within the log layer, and then scales it to the canonical eddy-viscosity $\nu_T$ in a manner consistent with the viscous sublayer. PHASTA's current version of the SA model omits the original reference's trip term\footnote{Technically, PHASTA's version of the SA model corresponds to SA-noft2 on the NASA Turbulence Modelling Resource website.}, and chooses the vorticity magnitude as the scalar norm of the deformation tensor. The model, as implemented, can be written in full detail as
 \begin{align}
 	\phantom{W_{ij}}
 	&\begin{aligned}
@@ -133,13 +131,17 @@ Fundamentally, the SA model solves a transport equation for the pseudo-eddy visc
 	\end{aligned}
 \end{align}
 
-Because this model has been extensively summarized in prior work for this course, further exposition will be left to \citet{spalart1992}, and we will proceed with a discussion of the curvature correction.
+Because this model has been extensively summarized in prior work for this course, further exposition will be left to \citet{spalart1992}, and instead move on to a discussion of the Spalart-Shur RC-correction.
 
-\subsection{Spalart-Shur Curvature-Correction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Spalart-Shur Curvature-Correction} %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The key concepts underpinning the RC-correction were proposed by \citet{spalart1997}, and are understandably similar to those used in developing the SA model due to Spalart's hand in both formulations. Our examination of these concepts is paraphrased and condensed in large part from the aforementioned source. As a precursor, we note that descriptions of the `strength' of rotation and curvature are made relative to the shear rate and inverse shear-layer thickness, respectively.
 
-To develop or critique any RC-correction, it is of paramount importance that one understand the mechanisms by which rotation and curvature influence turbulent flows. \citet{spalart1997} consider to two extreme cases for their model: (a) thin shear flows with weak rotation or weak curvature, and (b) homogeneous rotating shear flows, in which strong rotation eliminates the anisotropic Reynolds stresses ($\tau'_{ij} = -\overline{u_i' u_j'} \rightarrow 0$ for $i \ne j$). Intuitive reasoning based on the former suggests a non-dimensional measure of RC-effects, which the authors determine is adequate to employed in the latter case.
+To develop or critique any RC-correction, it is of paramount importance that one understand the mechanisms by which rotation and curvature influence turbulent flows. \citet{spalart1997} consider to two extreme cases for their model: (a) thin shear flows with weak rotation or weak curvature, and (b) homogeneous rotating shear flows, in which strong rotation eliminates the anisotropic Reynolds stresses ($\tau'_{ij} = -\overline{u_i' u_j'} \rightarrow 0$ for $i \ne j$). Intuitive reasoning based on the former suggests a non-dimensional measure of RC-effects, which the authors determine is adequate to employ in the latter case.
 
 For analysis, we assume a statistically-stationary two-dimensional shear flow with mean velocity $\overline{u}$ in the $x$ direction and positive $\partial \overline{u} / \partial y$. We seek to understand the behavior of the Reynolds shear stress $-\overline{u'v'} > 0$, in order to clarify its effects on the eddy-viscosity-based SA model. To correct the Reynolds stress transport equation (RSTE) for reference frame rotation, one must add the term
 \begin{equation}
@@ -148,14 +150,26 @@ For analysis, we assume a statistically-stationary two-dimensional shear flow wi
 2 \Omega \big( \overline{u'^2} - \overline{v'^2} \big)
 \;,
 \end{equation}
-where $\Omega$ is the rotation rate about the $z$-axis, and the simplification applies to our two-dimensional shear flow. Since the stream-wise fluctuations are greater than their span-wise counterparts, the Coriolis term increases production of shear stress when $\Omega > 0$, and vice versa. Curvature produces a similar term in the RSTE. We conclude that the means by which Reynolds stresses (and through the Boussinesq hypothesis, eddy viscosity $\nu_T$) are enhanced or diminished in RC-present flows are indeed subtle. Furthermore, to maintain the original SA model's strengths, any indicator of rotation and curvature must be invariant under Galilean transformations.
+where $\Omega$ is the rotation rate about the $z$-axis, and the simplification applies to our two-dimensional shear flow. Since the stream-wise fluctuations are greater than their span-wise counterparts, the Coriolis term increases production of shear stress when $\Omega > 0$, and vice versa. Curvature produces a similar term in the RSTE. We conclude that the means by which Reynolds stresses (and through the Boussinesq hypothesis, eddy-viscosity $\nu_T$) are enhanced or diminished in RC-present flows are subtle and not readily captured by standard eddy-viscosity models.
 
-Since $\overline{u'^2} > \overline{v'^2}$ is the defining characteristic of our turbulent shear flow, it is natural to question what it implies for Galilean invariants. 
+To maintain the original SA model's strengths, any indicator of rotation and curvature we devise must be invariant under Galilean transformations. Since $\overline{u'^2} > \overline{v'^2}$ is the defining turbulent characteristic of our shear flow, it is natural to question what it implies of some standard Galilean invariants of fluid dynamics. As \citet{spalart1997} discuss, this inequality describes a relationship between between the principal axes of the Reynolds stress tensor $\tau'_{ij}$ and the strain tensor $S_{ij} = \tfrac{1}{2} (u_{i,j} + u_{j,i})$. Depending on the system's rotation direction, the stress axes lag or lead the strain axes. Recall that in turbulent flows, the stress axes respond ``slowly'' to turbulent fluctuations, whereas the strain axes respond ``rapidly.'' Based on these tensors' disparate rates of change, in situations where $\tau'_{ij}$ leads $S_{ij}$, the rotation tends to align the them with each other, plausibly increasing turbulence production. This mechanism is the central basis of the SARC model, which scales turbulent production based on the alignment of these tensors.
 
+It remains to devise a quantitative measure of the degree to which turbulent stress and strain are leading or lagging each other. Such an indicator will ideally recognize the common physical basis of curvature and rotation effects. In the two-dimensional case, \citet{spalart1997} decide to track the direction of the principal axes of the strain tensor. Defining the angle $\alpha$ as the direction of strain tensor principal axes relative to an inertial frame, the total derivative $D \alpha / D t$ is chosen. Considering $D \alpha / D t$ physically, it is apparent that it both tracks curvature and rotation effects, and is Galilean invariant. Note that in a two-dimensional rotating homogeneous flow, $D \alpha / D t = \Omega$. Our present discussion is predicated upon the existence of principal strain directions. Situations in which $S_{ij}$ is isotropic result in undefined $\alpha$, and mitigation strategies will be discussed shortly.
 
-\vspace{1in}
+In the full three-dimensional case, the principal directions cannot be easily determined from algebraic manipulations, and the rotation angle $\alpha$ becomes a rotation angle vector. To obtain an invariant similar to $D \alpha / D t$ while addressing these additional complexities, \citet{spalart1997} consider the double contraction 
+\begin{equation}
+\DD{S_{ij}}{t} \frac{\delta S_{ij}}{\delta t}
+\label{eq:double_conraction}
+\end{equation}
+to be a prime candidate, where $\delta S_{ij} / \delta t$ is defined as the point-wise rotation of the strain rate tensor at a rate given by the vorticity vector. Symmetry considerations reveal that this expression depends only on the curl of the velocity field, which is consistent with a quantity targeting only rotation and curvature effects. After normalizing the magnitude using $D$, an average of the strain and vorticity norms, and including system rotation effects in a similar manner to the two-dimensional case, a scalar measure of RC-effects in three dimensions can be written as
+\begin{equation}
+\tilde{r} = \frac{2 \omega_{ik} S_{jk}}{D^4}
+\left( \frac{D S_{ij}}{D t} + \Omega_m (\epsilon_{imn} S_{jn} + \epsilon_{jmn} S_{in}) \right)
+\;.
+\end{equation}
+The connection to \eqref{eq:double_conraction} is clear from the nature of the contraction and the presence of vorticity from $\delta S_{ij} / \delta t$. The second derivatives of velocity present in $D S_{ij} / D t$ should not be taken lightly, since they add complexity to the computational implementation. Nonetheless, \citet{spalart1997} find no reasonable approximations to $\tilde{r}$ that can be calculated using only first derivatives.
 
-Developed by \citet{shur2000}, the method of accounting for streamline curvature in the standard SA model is relatively simple. In our PHASTA implementation, we assume a stationary reference frame. Thus $\Omega_m' = 0$ in the referenced paper, and Coriolos terms vanish. With this assumption, the only modification required to the standard SA-noft2 model is to multiply the production term $c_{b1} \tilde{S} \tilde{\nu}$ in \eqref{eq:SA_transport} by a rotation function $f_{r1}$, where
+Increased computational demand aside, $\tilde{r}$ can be used to construct a scaling function applied to the production term of the SA model. In our PHASTA implementation, we assume a stationary reference frame, setting $\Omega_m' = 0$ and allowing Coriolis terms to vanish. The only modification required to the standard SA model is to multiply the production term $c_{b1} \tilde{S} \tilde{\nu}$ in \eqref{eq:SA_transport} by a rotation function $f_{r1}$, where
 \begin{align}
 	&\begin{aligned}
 		\mathllap{f_{r1}} = (1 + c_{r1}) \frac{2 r^*}{1 + r^*} \left[ 1 - c_{r3} \arctan(c_{r2} \tilde{r}) \right] - c_{r1}
@@ -187,6 +201,7 @@ Developed by \citet{shur2000}, the method of accounting for streamline curvature
 		\label{eq:SARC_constants}
 	\end{aligned}
 \end{align}
+This rotation function protects against the case of isotropic stresses mentioned above; though $\tilde{r}$ may blow up as the strain tensor vanishes, $f_{r1}$ effectively turns itself off through the $r^*$ terms. The model constants are tuned using joint numerical-experimental data from \citet{dacles1995}. \citep{shur2000} note that these constants are still being tuned, and that for a backward-facing step, they found a value of $c_{r3} = 0.6$ instead of 1 to be more appropriate. Nonetheless, the NASA Turbulence Modelling Resource website lists the values given in \eqref{eq:SARC_constants} as reliable, and we use them accordingly in our own implementation.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
