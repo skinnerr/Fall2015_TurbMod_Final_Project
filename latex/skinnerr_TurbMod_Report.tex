@@ -39,11 +39,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-It is well-known that the presence of rotation and streamline curvature (RC) substantially alter the physics of turbulent shear flows. \citet{bradshaw1973} notes that these changes are ``surprisingly large,'' in that they are usually ``an order of magnitude more important than normal pressure gradients and other explicit terms'' in the RANS equations for curved flows. This leads to significant effects on shear stresses and other quantities when the stream-wise radius of curvature is as small as one-hundredth of the shear layer thickness \citep{bradshaw1973}. For aerodynamicists in particular, RC phenomena have high impact on boundary layer development, turbulent mixing, and heat transfer in applications ranging from flow over high-camber airfoils to rapidly-rotating turbomachinery blades.
+It is well-known that the presence of rotation and streamline curvature (RC) substantially alters the physics of turbulent shear flows. \citet{bradshaw1973} notes that these changes are ``surprisingly large,'' in that they are usually ``an order of magnitude more important than normal pressure gradients and other explicit terms'' in the RANS equations for curved flows. This can lead to significant effects on shear stresses and other quantities when the stream-wise radius of curvature is as large as one hundred times the shear layer thickness \citep{bradshaw1973}. For aerodynamicists in particular, RC phenomena have high impact on boundary layer development, turbulent mixing, and heat transfer in applications ranging from flow over high-camber airfoils to rapidly-rotating turbomachinery blades.
 
-For computational studies to effectively guide developments in design areas dominated by RC-effects, it is imperative that the turbulence models employed capture these effects in some way. Reynolds stress transport (RST) models commonly held superior to simpler eddy-viscosity models, because RC-terms appear explicitly in the Reynolds transport equation. Despite their accuracy, full RST models are much more costly, and adding an RC-correction term to the latter class of models would be a boon for workflows that require rapid design iteration.
+For computational studies to effectively guide developments in design areas dominated by RC-effects, it is imperative that the turbulence models employed capture these effects in some way. Reynolds stress transport (RST) models are commonly held superior to simpler eddy-viscosity models, because RC-terms appear explicitly in the Reynolds transport equation. Despite their accuracy, full RST models are much more costly, and adding an RC-correction term to the latter class of models would be a boon for workflows that require rapid design iteration.
 
-The Spalart-Allmaras (SA) one equation turbulence model captures important features of aerodynamic flows involving complex geometry and adverse pressure gradients well, and is thus one of the most appropriate eddy-viscosity models for such studies \citep{spalart1992}. However, the original model neglects the effects of streamline curvature and rotation. To better capture these effects, \citet{shur2000} introduce an RC-correction, resulting in the SARC model. They validate their correction against experimental and DNS data of a number of canonical wall-bounded turbulent shear flows: 
+The Spalart-Allmaras (SA) one equation turbulence model captures important features of aerodynamic flows involving complex geometry and adverse pressure gradients well, and is thus one of the most appropriate eddy-viscosity models for such studies \citep{spalart1992}. However, the original model neglects the effects of streamline curvature and rotation. To remedy this, \citet{shur2000} develop an RC-correction term that scales eddy viscosity production, giving rise to the SARC model. They validate their correction against experimental and DNS data of a number of canonical wall-bounded turbulent shear flows: 
 \begin{itemize}
 \item one-dimensional, fully-developed flow in a plane rotating channel,
 \item one-dimensional, fully-developed flow in a curved channel,
@@ -52,7 +52,7 @@ The Spalart-Allmaras (SA) one equation turbulence model captures important featu
 \end{itemize}
 In all cases, the authors demonstrate substantial improvements of the SARC model over the standard SA model and in most cases the Menter two-equation shear stress transport (M-SST). These conclusions are based on predictions of mean velocity and wall shear stress distributions.
 
-In the present project, the \citet{shur2000} RC-correction is added to the existing SA model in PHASTA, the Parallel Hierarchic Adaptive Transient Analysis CFD code developed and maintained by Prof.\ Kenneth E.\ Jansen's group at the University of Colorado at Boulder. Our group focuses on aerodynamic flow control, which in many cases simplifies to ``the pursuit of bent streamlines''. Thus, the ability to run RC-corrected RANS simulations will be a welcome addition to our research capabilities. To test the implementation's correctness, we simulate the 90\degree-bend case listed above, verify it using both the SA and SARC data of \citet{shur2000}, and validate it against the experimental data of \citet{kim1994}.
+In the present project, the \citet{shur2000} curvature-correction (sans rotation terms) is added to the existing SA model in PHASTA, the Parallel Hierarchic Adaptive Stabilized Transient Analysis CFD code developed and maintained by Prof.\ Kenneth E.\ Jansen's group at the University of Colorado at Boulder. Our group focuses on aerodynamic flow control, which in many cases simplifies to ``the pursuit of bent streamlines''. Of particular interest to the author is the increased accuracy curvature-correction could bring to performance predictions of flow control strategies in an aggressive subsonic diffuser. Other applications include unsteady separation in flows over high-lift wing and tail configurations. Thus, the ability to run curvature-corrected RANS simulations will be a welcome addition to our research capabilities. To test our implementation's correctness, we simulate the 90\degree-bend case listed above, verify it using both the SA and SARC data of \citet{shur2000}, and validate it against the experimental data of \citet{kim1994}.
 
 With the motivation clear, the remainder of this paper discusses the philosophy underpinning the mathematics of the RC-correction; the changes made to PHASTA during implementation; and the validation procedures employed, including geometry construction, meshing, and comparison to the published data mentioned above.
 
@@ -133,37 +133,39 @@ Fundamentally, the SA model solves a transport equation for the pseudo-eddy visc
 	\end{aligned}
 \end{align}
 
+Because this model has been extensively summarized in prior work for this course, further exposition will be left to \citet{spalart1992}, and we will proceed with a discussion of the curvature correction.
+
 \subsection{Spalart-Shur Curvature-Correction}
 
-The key concepts underpinning the RC-correction were proposed by \citet{spalart1997}, and are understandably similar to those used in developing the SA model.
+The key concepts underpinning the RC-correction were proposed by \citet{spalart1997}, and are understandably similar to those used in developing the SA model due to Spalart's hand in both formulations.
 
 Developed by \citet{shur2000}, the method of accounting for streamline curvature in the standard SA model is relatively simple. In our PHASTA implementation, we assume a stationary reference frame. Thus $\Omega_m' = 0$ in the referenced paper, and Coriolos terms vanish. With this assumption, the only modification required to the standard SA-noft2 model is to multiply the production term $c_{b1} \tilde{S} \tilde{\nu}$ in \eqref{eq:SA_transport} by a rotation function $f_{r1}$, where
 \begin{align}
 	&\begin{aligned}
 		\mathllap{f_{r1}} = (1 + c_{r1}) \frac{2 r^*}{1 + r^*} \left[ 1 - c_{r3} \arctan(c_{r2} \tilde{r}) \right] - c_{r1}
-		\;,
+		\;
 		\label{eq:SARC_rotation_function}
 	\end{aligned}\\[0.25cm]
 	\phantom{f_{r1}}
 	&\begin{aligned}
 		\mathllap{r^*} &= S / \Omega
-		\;, &\qquad
+		\; &\qquad
 		\tilde{r} &= \frac{2 \omega_{ik} S_{jk}}{D^4} \left( \frac{D S_{ij}}{D t} \right)
-		\;, &\qquad
+		\; &\qquad
 		S_{ij} &= \frac{1}{2} \left( \pp{u_i}{x_j} + \pp{u_j}{x_i} \right)
-		\;, \\
+		\; \\
 		\mathllap{S^2} &= 2 S_{ij} S_{ij}
-		\;, &\qquad
+		\; &\qquad
 		\Omega^2 &= 2 \omega_{ij} \omega_{ij}
-		\;, &\qquad
+		\; &\qquad
 		D^2 &= (S^2 + \Omega^2) / 2
 		\label{eq:SARC_definitions}
 	\end{aligned}\\[0.25cm]
 	&\begin{aligned}
 		\mathllap{c_{r1}} &= 1.0
-		\;, \quad
+		\; \quad
 		c_{r2} = 12
-		\;, \quad
+		\; \quad
 		c_{r3} = 1.0
 		\;.
 		\label{eq:SARC_constants}
