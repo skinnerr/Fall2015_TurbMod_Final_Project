@@ -41,7 +41,7 @@
 
 It is well-known that the presence of rotation and streamline curvature (RC) substantially alters the physics of turbulent shear flows. \citet{bradshaw1973} notes that these changes are ``surprisingly large,'' in that they are usually ``an order of magnitude more important than normal pressure gradients and other explicit terms'' in the RANS equations for curved flows. This can lead to significant effects on shear stresses and other quantities when the stream-wise radius of curvature is as large as one hundred times the shear layer thickness \citep{bradshaw1973}. For aerodynamicists in particular, RC phenomena have high impact on boundary layer development, turbulent mixing, and heat transfer in applications ranging from flow over high-camber airfoils to rapidly-rotating turbomachinery blades.
 
-For computational studies to effectively guide developments in design areas dominated by RC-effects, it is imperative that the turbulence models employed capture these effects in some way. Reynolds stress transport (RST) models are commonly held superior to simpler eddy-viscosity models, because RC-terms appear explicitly in the Reynolds transport equation. Despite their accuracy, full RST models are much more costly, and adding an RC-correction term to the latter class of models would be a boon for workflows that require rapid design iteration.
+For computational studies to effectively guide developments in design areas dominated by RC-effects, it is imperative that the turbulence models employed capture their influence in some way. Reynolds stress transport (RST) models are sometimes viewed as superior to simpler eddy-viscosity models, because RC terms appear explicitly in the Reynolds transport equation. However, this explicit influence is limited to the production term, and there appears to be little consensus on how rotation and curvature influence the other diffusion and destruction terms \citep{spalart1997}. Despite the philosophical advantages that may exist, the accuracy of full RST models comes at substantial computational cost. Accordingly, adding an RC-correction term to the latter class of models would be a boon for workflows that require rapid design iteration.
 
 The Spalart-Allmaras (SA) one equation turbulence model captures important features of aerodynamic flows involving complex geometry and adverse pressure gradients well, and is thus one of the most appropriate eddy-viscosity models for such studies \citep{spalart1992}. However, the original model neglects the effects of streamline curvature and rotation. To remedy this, \citet{shur2000} develop an RC-correction term that scales eddy viscosity production, giving rise to the SARC model. They validate their correction against experimental and DNS data of a number of canonical wall-bounded turbulent shear flows: 
 \begin{itemize}
@@ -137,7 +137,23 @@ Because this model has been extensively summarized in prior work for this course
 
 \subsection{Spalart-Shur Curvature-Correction}
 
-The key concepts underpinning the RC-correction were proposed by \citet{spalart1997}, and are understandably similar to those used in developing the SA model due to Spalart's hand in both formulations.
+The key concepts underpinning the RC-correction were proposed by \citet{spalart1997}, and are understandably similar to those used in developing the SA model due to Spalart's hand in both formulations. Our examination of these concepts is paraphrased and condensed in large part from the aforementioned source. As a precursor, we note that descriptions of the `strength' of rotation and curvature are made relative to the shear rate and inverse shear-layer thickness, respectively.
+
+To develop or critique any RC-correction, it is of paramount importance that one understand the mechanisms by which rotation and curvature influence turbulent flows. \citet{spalart1997} consider to two extreme cases for their model: (a) thin shear flows with weak rotation or weak curvature, and (b) homogeneous rotating shear flows, in which strong rotation eliminates the anisotropic Reynolds stresses ($\tau'_{ij} = -\overline{u_i' u_j'} \rightarrow 0$ for $i \ne j$). Intuitive reasoning based on the former suggests a non-dimensional measure of RC-effects, which the authors determine is adequate to employed in the latter case.
+
+For analysis, we assume a statistically-stationary two-dimensional shear flow with mean velocity $\overline{u}$ in the $x$ direction and positive $\partial \overline{u} / \partial y$. We seek to understand the behavior of the Reynolds shear stress $-\overline{u'v'} > 0$, in order to clarify its effects on the eddy-viscosity-based SA model. To correct the Reynolds stress transport equation (RSTE) for reference frame rotation, one must add the term
+\begin{equation}
+2 \Omega_k \big( \overline{u'_j u'_m} \epsilon_{ikm} + \overline{u'_i u'_m} \epsilon_{jkm} \big)
+\quad \rightarrow \quad
+2 \Omega \big( \overline{u'^2} - \overline{v'^2} \big)
+\;,
+\end{equation}
+where $\Omega$ is the rotation rate about the $z$-axis, and the simplification applies to our two-dimensional shear flow. Since the stream-wise fluctuations are greater than their span-wise counterparts, the Coriolis term increases production of shear stress when $\Omega > 0$, and vice versa. Curvature produces a similar term in the RSTE. We conclude that the means by which Reynolds stresses (and through the Boussinesq hypothesis, eddy viscosity $\nu_T$) are enhanced or diminished in RC-present flows are indeed subtle. Furthermore, to maintain the original SA model's strengths, any indicator of rotation and curvature must be invariant under Galilean transformations.
+
+Since $\overline{u'^2} > \overline{v'^2}$ is the defining characteristic of our turbulent shear flow, it is natural to question what it implies for Galilean invariants. 
+
+
+\vspace{1in}
 
 Developed by \citet{shur2000}, the method of accounting for streamline curvature in the standard SA model is relatively simple. In our PHASTA implementation, we assume a stationary reference frame. Thus $\Omega_m' = 0$ in the referenced paper, and Coriolos terms vanish. With this assumption, the only modification required to the standard SA-noft2 model is to multiply the production term $c_{b1} \tilde{S} \tilde{\nu}$ in \eqref{eq:SA_transport} by a rotation function $f_{r1}$, where
 \begin{align}
