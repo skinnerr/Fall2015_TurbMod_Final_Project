@@ -126,12 +126,11 @@ Fundamentally, the SA model solves a transport equation for the pseudo-eddy-visc
 		c_{w3} &= 2
 		&\quad
 		c_{w1} &= \frac{c_{b1}}{\kappa^2} + \frac{1 + c_{b2}}{\sigma}
-		\;.
+		\;,
 		\label{eq:SA_constants}
 	\end{aligned}
 \end{align}
-
-Because this model has been extensively summarized in prior work for this course, further exposition will be left to \citet{spalart1992}, and instead move on to a discussion of the Spalart-Shur RC-correction.
+where $d$ is the distance to the nearest wall. Because this model has been extensively summarized in prior work for this course, further exposition will be left to \citet{spalart1992}, and instead move on to a discussion of the Spalart-Shur RC-correction.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,7 +200,7 @@ Increased computational demand aside, $\tilde{r}$ can be used to construct a sca
 		\label{eq:SARC_constants}
 	\end{aligned}
 \end{align}
-This rotation function protects against the case of isotropic stresses mentioned above; though $\tilde{r}$ may blow up as the strain tensor vanishes, $f_{r1}$ effectively turns itself off through the $r^*$ terms. Note that for our original example of shear flows with no curvature, $r^* = 1$, $\tilde{r} = 0$, and the constraint that the original SA model be recovered through $f_{r1} \rightarrow 1$ is satisfied. The model constants are tuned using joint numerical-experimental data from \citet{dacles1995}. \citep{shur2000} note that these constants are still being tuned, and that for a backward-facing step, they found a value of $c_{r3} = 0.6$ instead of 1 to be more appropriate. Nonetheless, the NASA Turbulence Modelling Resource website lists the values given in \eqref{eq:SARC_constants} as reliable, and we use them accordingly in our own implementation.
+This rotation function protects against the case of isotropic stresses mentioned above; though $\tilde{r}$ may blow up as the strain tensor vanishes, $f_{r1}$ effectively turns itself off through the $r^*$ terms. Note that for our original example of shear flows with no curvature, $r^* = 1$, $\tilde{r} = 0$, and the constraint that the original SA model be recovered through $f_{r1} \rightarrow 1$ is satisfied. The model constants are tuned using joint numerical-experimental data from \citet{dacles1995}. \citet{shur2000} note that these constants are still being tuned, and that for a backward-facing step, they found a value of $c_{r3} = 0.6$ instead of 1 to be more appropriate. Nonetheless, the NASA Turbulence Modelling Resource website lists the values given in \eqref{eq:SARC_constants} as reliable, and we use them accordingly in our own implementation.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -209,32 +208,64 @@ This rotation function protects against the case of isotropic stresses mentioned
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Since the standard SA model has already been implemented in PHASTA, our only task is to calculate and pre-multiply its production term by $f_{r1}$. The material derivative of the strain tensor, $DS_{ij}/Dt$, in \eqref{eq:SARC_definitions} made this process slightly more complicated than initially anticipated, but not overly so. In this section, we describe the process used to compute $f_{r1}$ conceptually and in code.
+Since the standard SA model has already been implemented in PHASTA, our only task is to calculate and pre-multiply its production term by $f_{r1}$. The material derivative of the strain tensor, $DS_{ij}/Dt$, in \eqref{eq:SARC_definitions} made this process slightly more complicated than initially anticipated, but not overly so. Because this is the author's first major foray into the source of PHASTA, the decision was made to limit modifications to the incompressible code. In this section, we describe the process used to compute $f_{r1}$.
+
+Because Spalart-Allmaras is a one-equation model, it requires solution of an additional transport equation for the eddy-viscosity $\nu_T$, in addition to the Navier-Stokes equations. The strong form of the eddy-viscosity transport equation specified in the SA model includes source, convection, and diffusion terms. To translate it into the finite element method's framework, the scalar transport equation is pre-multiplied by a weight function and integrated over the domain. Terms with second-order derivatives, such as diffusion, are integrated by parts to reduce the order of spatial derivatives that must be computed. The SA production term,
+\begin{equation}
+c_{b1}
+\tilde{\nu}
+\left( \sqrt{2 \omega_{ij} \omega_{ij}} + \frac{f_{v2} \tilde{\nu}}{\kappa^2 d^2} \right)
+\;,
+\end{equation}
+is just a scalar quantity with no encompassing derivatives, so its only contribution to the weak form residual comes from a spatial integral. No integration by parts is needed, so no surface integrals are affected by the source term.
+
+After localizing the weak form equation to elements, it is apparent that the production term is only evaluated at the quadrature points used for numerical integration. Thus, the most straightforward implementation of the Spalart-Shur curvature correction involves computing the $f_{r1}$ production scaling factor only at quadrature points. Accordingly, nodal quantities that act as arguments to $f_{r1}$ must be interpolated to the local quadrature points. This process is standard in finite elements. Given nodal values $\phi_A^e$ and shape functions $N^e_A(\mb{x}^e)$, the interpolated value $\phi(\mb{x}^e)$ at local coordinate $\mb{x}^e$ can be expressed as the sum
+\begin{equation}
+\phi(\mb{x}^e) = \sum_A N^e_A(\mb{x}^e) \: \phi_A^e
+\;.
+\end{equation}
+Furthermore, the first derivative of that variable with respect to some coordinate $x_i$ can be written in terms of shape function derivatives:
+\begin{equation}
+\pp{\phi(\mb{x}^e)}{x_i} = \sum_A \left(\pp{N}{x_i}\right)^e_A \! (\mb{x}^e) \: \phi_A^e
+\;.
+\label{eq:fem_first_derivs}
+\end{equation}
+These formulae will be used routinely to compute arguments of $f_{r1}$ at quadrature points.
+
+Because PHASTA uses linear shape functions, computing spatial second-derivatives is non-trivial. This raises the question of how we intend to compute such derivatives of velocity for the curvature-correction's $D S_{ij} / D t$ strain gradient terms.  Their computation is aided by a projection-reconstruction approach, which uses the following procedure, given nodal values of a scalar $\phi$:
+\begin{enumerate}
+\item The slope $\partial \phi / \partial \eta$ is computed between neighboring nodes, projecting a derivative field onto the elements.
+\item Slopes computed for neighboring elements are averaged together, reconstructing a nodal field representation of $\partial \phi / \partial \eta$.
+\end{enumerate}
+Then, the procedure of \eqref{eq:fem_first_derivs} can be applied to arrive at the spatial second-derivative. Fortunately, a nodal reconstruction of $\partial u_i / \partial x_j$ is already computed during each flow solve, and can be made readily accessible to our scalar solve routines.
+
+reconstructed velocity one is qres, coming from the flow solve. qres is a nodally-reconstructed field of d v / d x
 
 \subsection{Mathematics}
 
 We can write the proper definition of $DS_{ij}/Dt$ as
 \begin{equation}
-\frac{DS_{ij}}{Dt}
+\DD{S_{ij}}{t}
 \equiv
 \left( \pp{}{t} + u_k \pp{}{x_k} \right) S_{ij}
 =
+\frac{1}{2} 
 \left( \pp{}{t} + u_k \pp{}{x_k} \right)
-\frac{1}{2} \left( \pp{u_i}{x_j} + \pp{u_j}{x_i} \right)
+\left( \pp{u_i}{x_j} + \pp{u_j}{x_i} \right)
 \;,
 \end{equation}
 from which it is clear that we need to compute two kinds of terms within the code: the temporal derivatives and spatial gradients of the velocity gradient tensor $\partial u_i / \partial x_j$.
 
-For the time term, we can interchange the order of differentiation due to the continuum assumption,
+For the temporal term, the continuum assumption allows us to interchange the order of differentiation, so
 \begin{equation}
 \pp{}{t} \pp{u_i}{x_j}
 =
 \pp{}{x_j} \pp{u_i}{t}
 =
 \pp{}{x_j} a_i
-\;,
+\;.
 \end{equation}
-where $a_i$ is the fluid acceleration, which is already computed during each flow solve. The spatial derivatives of $a_i$ can then be computed using shape function gradients in the manner standard to finite element analysis. That is, (math here from FEM)......
+Here, $a_i$ is the fluid acceleration, which is already computed during each flow solve of PHASTA. The spatial derivatives of $a_i$ can then be computed using shape function gradients in the manner standard to finite element analysis. That is, taking the sum of shape function gradients 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
