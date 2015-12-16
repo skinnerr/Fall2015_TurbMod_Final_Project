@@ -239,17 +239,29 @@ Because PHASTA uses linear shape functions, computing spatial second-derivatives
 \item The slope $\partial \phi / \partial x_i$ is computed between neighboring nodes, projecting a derivative field onto the elements.
 \item Slopes computed for neighboring elements are averaged together, reconstructing a nodal representation of $\partial \phi / \partial x_i$.
 \end{enumerate}
-To obtain spatial second-derivatives, \eqref{eq:fem_first_derivs} can be applied to the reconstructed field. Fortunately, a nodal reconstruction of $\partial u_i / \partial x_j$ is already computed during each flow solve, and can be made readily accessible to our scalar solve routines.
+To obtain spatial second-derivatives, \eqref{eq:fem_first_derivs} can be applied to the reconstructed field. Fortunately, a nodal reconstruction of a scaled $S_{ij}$ is already computed during each flow solve, and can be made readily accessible to our scalar solve routines.
 
 \subsection{Changes to Source Code}
 
-We can write the proper definition of $DS_{ij}/Dt$ as
+We begin with general book-keeping changes to the code. First, the ``\li{RANS-SARC}'' model was added as an option to \li{input_fform.c}, and assigned an identifying \li{iRANS} integer of \li{-3}. Since all machinery within the existing SA code will also be used in the curvature-corrected model, any if-statement that activates for the standard SA model (identified by an \li{iRANS} code of \li{-1}), is also changed to activate for the curvature-corrected model. Spalart-Shur constants from \eqref{eq:SARC_constants} are added to \li{turbsa.f}.
+
+The main terms involved in $f_{r1}$, shown in \eqref{eq:SARC_definitions}, need to be accessible to the main computation of the eddy-viscosity, also known as the turbulence scalar, source term in \li{e3sourceSclr}. The next changes to the PHASTA source we discuss facilitate this need. As mentioned in the previous subsection, we require the nodal reconstruction of $S_{ij}$ in order to compute its spatial derivative. The reconstruction is called \li{qres}, and its global representation is computed in the flow solve's \li{ElmGMR} routine. We pass the variable up through \li{SolFlow} to \li{itrdrv}, and then down through the increasingly-specific scalar solve routines until we reach \li{e3sourceSclr}. The stack of function calls, starting from \li{itrdrv}, is:
+\begin{itemize}
+\item \li{SolSclr}
+\item \li{ElmGMRSclr}
+\item \li{AsIGMRSclr}
+\item \li{e3Sclr}
+\item \li{e3ivarSclr}
+\item \li{e3sourceSclr}
+\end{itemize}
+
+ We can write the proper definition of $DS_{ij}/Dt$ as
 \begin{equation}
 \DD{S_{ij}}{t}
 \equiv
 \left( \pp{}{t} + u_k \pp{}{x_k} \right) S_{ij}
 =
-\frac{1}{2} 
+\frac{1}{2}
 \left( \pp{}{t} + u_k \pp{}{x_k} \right)
 \left( \pp{u_i}{x_j} + \pp{u_j}{x_i} \right)
 \;,

@@ -126,8 +126,7 @@ framextopmargin=2pt
 \makeatother
 
 % Inline listing shorthand
-\newcommand{\li}[1]{\lstinline[style=inline]|#1|} %[
-\lstdefinestyle{inline}{basicstyle=\small\sffamily\color{cyan!60!black}}
+\newcommand{\li}[1]{{\color{cyan!60!black}\sffamily\small{\detokenize{#1}}}}
 
 % Wide tilde.
 \newcommand{\wt}[1]{\ensuremath{\widetilde{#1}}}
