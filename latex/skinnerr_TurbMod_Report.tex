@@ -287,13 +287,92 @@ reconstructed velocity one is qres, coming from the flow solve. qres is a nodall
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.48\textwidth]{Cf_Inside_Comparison.png}
+\includegraphics[width=0.48\textwidth]{Cf_Outside_Comparison.png}
+\caption{Blep blep blep.}
+\label{fig:Cf_Centerlines}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.32\textwidth]{Cf_U1.png}
+\includegraphics[width=0.32\textwidth]{Cf_U2.png}\\
+\includegraphics[width=0.32\textwidth]{Cf_15.png}
+\includegraphics[width=0.32\textwidth]{Cf_45.png}
+\includegraphics[width=0.32\textwidth]{Cf_75.png}\\
+\includegraphics[width=0.32\textwidth]{Cf_D1.png}
+\includegraphics[width=0.32\textwidth]{Cf_D2.png}
+\caption{Blep blep blep.}
+\label{fig:Cf_Centerlines}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.32\textwidth]{vel_U1.png}
+\includegraphics[width=0.32\textwidth]{vel_U2.png}\\
+\includegraphics[width=0.32\textwidth]{vel_15.png}
+\includegraphics[width=0.32\textwidth]{vel_45.png}
+\includegraphics[width=0.32\textwidth]{vel_75.png}\\
+\includegraphics[width=0.32\textwidth]{vel_D1.png}
+\includegraphics[width=0.32\textwidth]{vel_D2.png}
+\caption{Blep blep blep.}
+\label{fig:velocity_slices}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.75\textwidth]{EV_Comparison_Full_U1_15.png}\\
+\includegraphics[width=0.75\textwidth]{EV_Comparison_Full_15_45_75.png}\\
+\includegraphics[width=0.75\textwidth]{EV_Comparison_Full_75_D1_D2.png}
+\caption{Blep blep blep.}
+\label{fig:ev_lines}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{SA-v-SARC_EddyVisc.png}
+\caption{Blep blep blep.}
+\label{fig:ev_slices}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\textwidth]{SA-v-SARC_WallShearStress.png}
+\caption{Blep blep blep.}
+\label{fig:wss}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\textwidth]{TuningMesh_Long_yplus.png}
+\caption{Blep blep blep.}
+\label{fig:wss}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\textwidth]{meshes_far.png}
+\includegraphics[width=\textwidth]{meshes_zoom.png}
+\caption{Blep blep blep.}
+\label{fig:mesh_overview}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.7\textwidth]{meshes_bls.png}
+\caption{Blep blep blep.}
+\label{fig:mesh_bls}
+\end{figure}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Appendix A: PHASTA Code} %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-All changes discussed here pertain to the incompressible code, including files common to both when appropriate.
+All changes discussed here pertain to the incompressible code, including files common to both incompressible and compressible branches when appropriate.
 
 In \li{input_fform.f}, the entry \li{RANS-SARC} is added to represent this turbulence model in \li{input.config}.
 
