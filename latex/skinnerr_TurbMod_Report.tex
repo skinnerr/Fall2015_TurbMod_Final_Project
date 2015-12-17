@@ -308,7 +308,7 @@ We validate our implementation against both the experimental data of \citet{kim1
 
 Kim's experimental geometry is shown in \figref{fig:setup_Kim}. Referencing the top view diagram, flow enters the domain after a contraction section of area ratio 6, and is tripped by sandpaper along all four walls of the duct to generate a fully turbulent boundary layer by the time the flow reaches the bend. The duct has characteristic dimension $H = 8$ in ($0.2032$ m), with inner and outer radii of $R_i=3H$ and $R_o=4H$, respectively. \citet{kim1994} took special care to isolate secondary flows and vortex formation in the corners from purely curvature-driven effects present along the center-line, and accordingly chose a duct aspect ratio of 6. Thus, the span-wise dimension is $H$, and the vertical dimension is $6H$.
 
-\citet{kim1994} report a freestream velocity of $U_0 = 16$ m/s, and a duct Reynolds number of $Re = U_0 H / \nu = 224,000$. This determines the kinematic viscosity to be $\nu = 1.45 \times 10^{-5}$ m$^2$/s.
+\citet{kim1994} report a freestream velocity of $U_0 = 16$ m/s, and a duct Reynolds number of $Re = U_0 H / \nu = 224,000$. This determines the kinematic viscosity to be $\nu = 1.45 \times 10^{-5}$ m$^2$/s. We assume a typical density of air, $\rho = 1.225$ kg/m$^3$.
 
 When presenting our validation data, we use the $X$, $Y$, $Z$ coordinate system of \citet{kim1994}, which locates the origin at the upper inside corner of the duct exactly where it begins to curve. $X$ is the stream-wise coordinate, $Y$ is the span-wise coordinate perpendicular to $X$, and $Z$ is the distance from the top duct wall.
 
@@ -358,7 +358,7 @@ Our first task was to match the experimental velocity profile at station U1. An 
 \label{fig:mesh_overview}
 \end{figure}
 
-New meshes were made with lower growth rates, primarily by Riccardo Balin. These meshes allowed for detailed comparisons to be made with experimental velocity profiles at U1. Three major conclusions were drawn from this process. First, velocity BL scaling at the inflow had little affect on matching U1 velocity profiles. Second, adding an eddy viscosity profile in the BL helped achieve good agreement with U1 velocities. This scalar profile plays a similar role to the sandpaper trip in the experimental duct, and develops a steeper BL mean velocity gradient. Third and accordingly, the inflow section of the duct could be substantially shortened (see Meshes B and C in \ref{fig:mesh_overview}) because of expedited turbulent BL development. For these later meshes, the value of $\Delta y^+_1$ was iterated upon to meet the recommended value of $\sim 2$ from \citet{spalart2001}. Mesh B and Mesh C, had upstream sections of length 1.69 m, and downstream sections of length 2.5 m. Both had much finer resolution in the $Y$-direction. Mesh B utilized anisotropic elements, but still resulted in 5.25 million tetrahedra, which was too costly for the negligible improvement it showed over our ``final mesh,'' Mesh C. Mesh C was generated with the following properties, and can again be inspected in \figref{fig:mesh_overview}:
+New meshes were made with lower growth rates, primarily by Riccardo Balin. These meshes allowed for detailed comparisons to be made with experimental velocity profiles at U1. Three major conclusions were drawn from this process. First, velocity BL scaling at the inflow had little affect on matching U1 velocity profiles. Second, adding an eddy viscosity profile in the BL helped achieve good agreement with U1 velocities. This scalar profile plays a similar role to the sandpaper trip in the experimental duct, and develops a steeper BL mean velocity gradient. Third and accordingly, the inflow section of the duct could be substantially shortened (see Meshes B and C in \figref{fig:mesh_overview}) because of expedited turbulent BL development. For these later meshes, the value of $\Delta y^+_1$ was iterated upon to meet the recommended value of $\sim 2$ from \citet{spalart2001}. Mesh B and Mesh C, had upstream sections of length 1.69 m, and downstream sections of length 2.5 m. Both had much finer resolution in the $Y$-direction. Mesh B utilized anisotropic elements, but still resulted in 5.25 million tetrahedra, which was too costly for the negligible improvement it showed over our ``final mesh,'' Mesh C. Mesh C was generated with the following properties, and can again be inspected in \figref{fig:mesh_overview}:
 \begin{itemize}
 \item Anisotropic mesh size of 0.045 m in the $X$- and $Y$- directions, 0.09 m in the $Z$-direction.
 \item Refinement box of element edge size 0.03 m
@@ -366,7 +366,9 @@ New meshes were made with lower growth rates, primarily by Riccardo Balin. These
 \item Boundary layers with $\Delta y_1 = 2 \times 10^{-5}$, $\Sigma \Delta y = 0.027$, and 26 total layers.
 \end{itemize}
 
-\subsection{Results}
+Runs on Mesh C are conducted with a time step of $1 \times 10^{-2}$ sec, and it takes about 100 time steps to run through the transient. Though transient results may be interesting for debugging purposes, since we are using first-order time integration and such a large time step, they have little physical import.
+
+\subsection{Results and Discussion}
 
 Using Mesh C, we now present results comparing our implementation of the Spalart-Shur curvature correction to those produced by the original SA model.
 
@@ -374,9 +376,24 @@ First and foremost, it is desirable to show evidence that our inflow profile was
 
 Eddy viscosity behavior is presented in \figref{fig:ev_slices} and \figref{fig:ev_lines}. Studies on two-dimensional boundary layers indicate that convex curvature has a stabilizing effect on turbulence (i.e. reduces turbulent transport), whereas concave curvature has the opposite effect \citep{kim1994}. Thus, we would expect eddy viscosity to be reduced near the inside wall, while increasing (not necessarily in equal-and-opposite fashion, though) on the outside wall. From \figref{fig:ev_slices} we see this behavior in the SA model results, but not quite for SARC. This is our first warning that the curvature-correction may not be correctly implemented. Though the SARC eddy viscosity increases on the outer wall up until about halfway through the bend, it is rapidly and unexpectedly diminished around station 45. On the inner wall, eddy viscosity appears to stay constant. More quantitative comparison between models in \figref{fig:ev_lines} confirms these trends.
 
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\textwidth]{SA-v-SARC_WallShearStress.png}
+\caption{Predicted wall shear stress by SA (bottom) and SARC (top) models.}
+\label{fig:wss}
+\end{figure}
+
 This odd behavior of the SARC implementation causes strange effects on the wall shear stress shown in \figref{fig:wss}. Though both models show the expected sharp increase in wall shear stress as flow responds to the favorable pressure gradient on the inside wall, the SA model reflects the trend until curvature disappears. Dissimilarly, mid-way through the curved region, SARC predicts a marked drop in wall shear stress, even in the centerline region (not affected by stream-wise corner vortices that develop at the onset of curvature), and despite the fact that the pressure profile remains essentially unchanged for the extent of the curved section.
 
-This does not bode well
+This does not bode well for our predictions of friction coefficient, since it is just a scaled version of wall shear stress. This is borne out for $C_f$ along the centerline, \figref{fig:Cf_Centerlines}, and along the circumference of each experimental station, \figref{fig:Cf_slices}. The poor performance of both models away from the $Z/H=3$ centerline, corresponding to roughly $2 \le L \le 5$ is expected, since Mesh C simply does not have the requisite corner resolution to capture the secondary flows and vortical structures accurately. On both walls, the SA model seems to do an excellent job of replicating the SA results of \citet{shur2000}.
+
+Though a grid-independence study could be formally conducted, I hesitate to do so for two reasons: first, the implementation is still clearly being debugged, and the current mesh has the ability to capture the ``wrong'' behavior pretty clearly; second, the SA results are nearly identical to those on the 5.25 million-element Mesh B (not shown), and also compare favorably with the results of \citep{shur2000}, which are shown in \figref{fig:Shur_Results}.
+
+\citet{kim1994} also provide pressure coefficient $C_p$ data along the inner and outer walls' centerlines, but we have not used it. Especially for debugging purposes, this could be another useful piece of information.
+
+\section{Conclusion}
+
+In conclusion, it is apparent that our implementation of the curvature-corrected SA model is, unfortunately, still buggy. Before it can be applied to any research cases of interest, these issues will need to be addressed. Nonetheless, the process illustrates some prime difficulties of developing and validating turbulence models. In particular, obtaining a adequate estimate of boundary conditions can be daunting, especially if an experiment does not measure, say, upstream velocity profiles or other relevant parameters. Furthermore, some complex models may not have simple cases on which they can be debugged, and therefore the process of debugging may be extended due resource consumption issues. In any case, I hope to correct the current shortcomings of this SARC implementation in the near future, and hopefully we will produce some interesting results in the near future.
 
 \begin{figure}[p]
 \centering
@@ -394,7 +411,7 @@ This does not bode well
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.9\textwidth]{SA-v-SARC_EddyVisc.png}
-\caption{Eddy viscosity (m$^2$/s behavior comparison between SA and SARC along a centerline slice ($Z/H=3$). Pressure (Pascals) is shown concurrently to understand the de/stabilizing effects of pressure gradient on turbulence in the presence of convex/concave walls.}
+\caption{Eddy viscosity (m$^2$/s) behavior comparison between SA and SARC along a centerline slice ($Z/H=3$). Pressure (Pascals) is shown concurrently to understand the de/stabilizing effects of pressure gradient on turbulence in the presence of convex/concave walls.}
 \label{fig:ev_slices}
 \end{figure}
 
@@ -430,21 +447,11 @@ This does not bode well
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=\textwidth]{SA-v-SARC_WallShearStress.png}
-\caption{Predicted wall shear stress by SA (bottom) and SARC (top) models.}
-\label{fig:wss}
+\includegraphics[width=0.48\textwidth]{Shur_FrictionInner.png}
+\includegraphics[width=0.48\textwidth]{Shur_FrictionInner.png}
+\caption{Centerline friction coefficient results from \citet{shur2000}.}
+\label{fig:Shur_Results}
 \end{figure}
-
-\section{Discussion}
-
-%\begin{figure}[h!]
-%\centering
-%\includegraphics[width=0.48\textwidth]{Shur_Setup.png}
-%\caption{Blep blep blep.}
-%\label{fig:setup_Shur}
-%\end{figure}
-
-\citet{kim1994} also provide pressure coefficient $C_p$ data along the inner and outer walls' centerlines, but we have not used it. Especially for debugging purposes, this could be another useful piece of information.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
