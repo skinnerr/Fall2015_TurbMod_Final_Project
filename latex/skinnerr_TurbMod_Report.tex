@@ -372,29 +372,6 @@ Runs on Mesh C are conducted with a time step of $1 \times 10^{-2}$ sec, and it 
 
 Using Mesh C, we now present results comparing our implementation of the Spalart-Shur curvature correction to those produced by the original SA model.
 
-First and foremost, it is desirable to show evidence that our inflow profile was tuned appropriately to match velocity profiles at U1, and subsequently predict velocity profiles at U2, before effects of curvature come into play. Such profiles are found in \figref{fig:velocity_slices}, and show rather good agreement at all stations and for both models. Exceptions include the outer wall at station 75, where an adverse pressure gradient feeds turbulent mixing and draws high-momentum fluid toward the boundary; and the inside wall at D1, where flow separation occurs due to an adverse pressure gradient at the end of the convex curvature. The adequacy of inflow conditions observed here is consistent with later plots of $C_f$ on the walls of the upstream section.
-
-Eddy viscosity behavior is presented in \figref{fig:ev_slices} and \figref{fig:ev_lines}. Studies on two-dimensional boundary layers indicate that convex curvature has a stabilizing effect on turbulence (i.e. reduces turbulent transport), whereas concave curvature has the opposite effect \citep{kim1994}. Thus, we would expect eddy viscosity to be reduced near the inside wall, while increasing (not necessarily in equal-and-opposite fashion, though) on the outside wall. From \figref{fig:ev_slices} we see this behavior in the SA model results, but not quite for SARC. This is our first warning that the curvature-correction may not be correctly implemented. Though the SARC eddy viscosity increases on the outer wall up until about halfway through the bend, it is rapidly and unexpectedly diminished around station 45. On the inner wall, eddy viscosity appears to stay constant. More quantitative comparison between models in \figref{fig:ev_lines} confirms these trends.
-
-\begin{figure}[h!]
-\centering
-\includegraphics[width=\textwidth]{SA-v-SARC_WallShearStress.png}
-\caption{Predicted wall shear stress by SA (bottom) and SARC (top) models.}
-\label{fig:wss}
-\end{figure}
-
-This odd behavior of the SARC implementation causes strange effects on the wall shear stress shown in \figref{fig:wss}. Though both models show the expected sharp increase in wall shear stress as flow responds to the favorable pressure gradient on the inside wall, the SA model reflects the trend until curvature disappears. Dissimilarly, mid-way through the curved region, SARC predicts a marked drop in wall shear stress, even in the centerline region (not affected by stream-wise corner vortices that develop at the onset of curvature), and despite the fact that the pressure profile remains essentially unchanged for the extent of the curved section.
-
-This does not bode well for our predictions of friction coefficient, since it is just a scaled version of wall shear stress. This is borne out for $C_f$ along the centerline, \figref{fig:Cf_Centerlines}, and along the circumference of each experimental station, \figref{fig:Cf_slices}. The poor performance of both models away from the $Z/H=3$ centerline, corresponding to roughly $2 \le L \le 5$ is expected, since Mesh C simply does not have the requisite corner resolution to capture the secondary flows and vortical structures accurately. On both walls, the SA model seems to do an excellent job of replicating the SA results of \citet{shur2000}.
-
-Though a grid-independence study could be formally conducted, I hesitate to do so for two reasons: first, the implementation is still clearly being debugged, and the current mesh has the ability to capture the ``wrong'' behavior pretty clearly; second, the SA results are nearly identical to those on the 5.25 million-element Mesh B (not shown), and also compare favorably with the results of \citep{shur2000}, which are shown in \figref{fig:Shur_Results}.
-
-\citet{kim1994} also provide pressure coefficient $C_p$ data along the inner and outer walls' centerlines, but we have not used it. Especially for debugging purposes, this could be another useful piece of information.
-
-\section{Conclusion}
-
-In conclusion, it is apparent that our implementation of the curvature-corrected SA model is, unfortunately, still buggy. Before it can be applied to any research cases of interest, these issues will need to be addressed. Nonetheless, the process illustrates some prime difficulties of developing and validating turbulence models. In particular, obtaining a adequate estimate of boundary conditions can be daunting, especially if an experiment does not measure, say, upstream velocity profiles or other relevant parameters. Furthermore, some complex models may not have simple cases on which they can be debugged, and therefore the process of debugging may be extended due resource consumption issues. In any case, I hope to correct the current shortcomings of this SARC implementation in the near future, and hopefully we will produce some interesting results in the near future.
-
 \begin{figure}[p]
 \centering
 \includegraphics[width=0.32\textwidth]{vel_U1.png}
@@ -408,14 +385,7 @@ In conclusion, it is apparent that our implementation of the curvature-corrected
 \label{fig:velocity_slices}
 \end{figure}
 
-\begin{figure}[h!]
-\centering
-\includegraphics[width=0.9\textwidth]{SA-v-SARC_EddyVisc.png}
-\caption{Eddy viscosity (m$^2$/s) behavior comparison between SA and SARC along a centerline slice ($Z/H=3$). Pressure (Pascals) is shown concurrently to understand the de/stabilizing effects of pressure gradient on turbulence in the presence of convex/concave walls.}
-\label{fig:ev_slices}
-\end{figure}
-
-\begin{figure}[h!]
+\begin{figure}[p]
 \centering
 \includegraphics[width=0.75\textwidth]{EV_Comparison_Full_U1_15.png}\\
 \includegraphics[width=0.75\textwidth]{EV_Comparison_Full_15_45_75.png}\\
@@ -424,15 +394,29 @@ In conclusion, it is apparent that our implementation of the curvature-corrected
 \label{fig:ev_lines}
 \end{figure}
 
-\begin{figure}[h!]
+\begin{figure}[t!]
 \centering
-\includegraphics[width=0.48\textwidth]{Cf_Inside_Comparison.png}
-\includegraphics[width=0.48\textwidth]{Cf_Outside_Comparison.png}
-\caption{Wall friction coefficient data from \citet{kim1994} ($\circ$), and the SA ({\color{blue}\solidrule[6mm]}) and SARC ({\color{red}\dashrule}) models from $z/H=3$ data at all seven experimental stations.}
-\label{fig:Cf_Centerlines}
+\includegraphics[width=0.9\textwidth]{SA-v-SARC_EddyVisc.png}
+\caption{Eddy viscosity (m$^2$/s) behavior comparison between SA and SARC along a centerline slice ($Z/H=3$). Pressure (Pascals) is shown concurrently to understand the de/stabilizing effects of pressure gradient on turbulence in the presence of convex/concave walls.}
+\label{fig:ev_slices}
 \end{figure}
 
-\begin{figure}[h!]
+\begin{figure}[t!]
+\centering
+\includegraphics[width=\textwidth]{SA-v-SARC_WallShearStress.png}
+\caption{Predicted wall shear stress by SA (bottom) and SARC (top) models.}
+\label{fig:wss}
+\end{figure}
+
+First and foremost, it is desirable to show evidence that our inflow profile was tuned appropriately to match velocity profiles at U1, and subsequently predict velocity profiles at U2, before effects of curvature come into play. Such profiles are found in \figref{fig:velocity_slices}, and show rather good agreement at all stations and for both models. Exceptions include the outer wall at station 75, where an adverse pressure gradient feeds turbulent mixing and draws high-momentum fluid toward the boundary; and the inside wall at D1, where flow separation occurs due to an adverse pressure gradient at the end of the convex curvature. The adequacy of inflow conditions observed here is consistent with later plots of $C_f$ on the walls of the upstream section.
+
+Eddy viscosity behavior is presented in \figref{fig:ev_lines} and \figref{fig:ev_slices}. Studies on two-dimensional boundary layers indicate that convex curvature has a stabilizing effect on turbulence (i.e. reduces turbulent transport), whereas concave curvature has the opposite effect \citep{kim1994}. Thus, we would expect eddy viscosity to be reduced near the inside wall, while increasing (not necessarily in equal-and-opposite fashion, though) on the outside wall. From \figref{fig:ev_slices} we see this behavior in the SA model results, but not quite for SARC. This is our first warning that the curvature-correction may not be correctly implemented. Though the SARC eddy viscosity increases on the outer wall up until about halfway through the bend, it is rapidly and unexpectedly diminished around station 45. On the inner wall, eddy viscosity appears to stay constant. More quantitative comparison between models in \figref{fig:ev_lines} confirms these trends.
+
+This odd behavior of the SARC implementation causes strange effects on the wall shear stress shown in \figref{fig:wss}. Though both models show the expected sharp increase in wall shear stress as flow responds to the favorable pressure gradient on the inside wall, the SA model reflects the trend until curvature disappears. Dissimilarly, mid-way through the curved region, SARC predicts a marked drop in wall shear stress, even in the centerline region (not affected by stream-wise corner vortices that develop at the onset of curvature), and despite the fact that the pressure profile remains essentially unchanged for the extent of the curved section.
+
+This does not bode well for our predictions of friction coefficient, since it is just a scaled version of wall shear stress. This is borne out for $C_f$ along the centerline, \figref{fig:Cf_Centerlines}, and along the circumference of each experimental station, \figref{fig:Cf_slices}. The poor performance of both models away from the $Z/H=3$ centerline, corresponding to roughly $2 \le L \le 5$ is expected, since Mesh C simply does not have the requisite corner resolution to capture the secondary flows and vortical structures accurately. On both walls, the SA model seems to do an excellent job of replicating the SA results of \citet{shur2000}.
+
+\begin{figure}[p]
 \centering
 \includegraphics[width=0.32\textwidth]{Cf_U1.png}
 \includegraphics[width=0.32\textwidth]{Cf_U2.png}\\
@@ -445,6 +429,18 @@ In conclusion, it is apparent that our implementation of the curvature-corrected
 \label{fig:Cf_slices}
 \end{figure}
 
+Though a grid-independence study could be formally conducted, I hesitate to do so for two reasons: first, the implementation is still clearly being debugged, and the current mesh has the ability to capture the ``wrong'' behavior pretty clearly; second, the SA results are nearly identical to those on the 5.25 million-element Mesh B (not shown), and also compare favorably with the results of \citep{shur2000}, which are shown in \figref{fig:Shur_Results}.
+
+\citet{kim1994} also provide pressure coefficient $C_p$ data along the inner and outer walls' centerlines, but we have not used it. Especially for debugging purposes, this could be another useful piece of information.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.48\textwidth]{Cf_Inside_Comparison.png}
+\includegraphics[width=0.48\textwidth]{Cf_Outside_Comparison.png}
+\caption{Wall friction coefficient data from \citet{kim1994} ($\circ$), and the SA ({\color{blue}\solidrule[6mm]}) and SARC ({\color{red}\dashrule}) models from $z/H=3$ data at all seven experimental stations.}
+\label{fig:Cf_Centerlines}
+\end{figure}
+
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.48\textwidth]{Shur_FrictionInner.png}
@@ -452,6 +448,10 @@ In conclusion, it is apparent that our implementation of the curvature-corrected
 \caption{Centerline friction coefficient results from \citet{shur2000}.}
 \label{fig:Shur_Results}
 \end{figure}
+
+\section{Conclusion}
+
+In conclusion, it is apparent that our implementation of the curvature-corrected SA model is, unfortunately, still buggy. Before it can be applied to any research cases of interest, these issues will need to be addressed. Nonetheless, the process illustrates some prime difficulties of developing and validating turbulence models. In particular, obtaining a adequate estimate of boundary conditions can be daunting, especially if an experiment does not measure, say, upstream velocity profiles or other relevant parameters. Furthermore, some complex models may not have simple cases on which they can be debugged, and therefore the process of debugging may be extended due resource consumption issues. In any case, I hope to correct the current shortcomings of this SARC implementation in the near future, and hopefully we will produce some interesting results in the near future.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
