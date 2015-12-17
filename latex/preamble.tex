@@ -116,6 +116,13 @@ framextopmargin=2pt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Various plot lines to include in-line.
+\newcommand{\solidrule}[1][8mm]{\rule[0.5ex]{#1}{1.5pt}}
+\newcommand{\dashrule}{\mbox{%
+	\solidrule[2mm]\hspace{1mm}\solidrule[2mm]\hspace{1mm}\solidrule[2mm]}}
+\newcommand{\dotdashrule}{\mbox{%
+	\solidrule[0.5mm]\hspace{1mm}\solidrule[2mm]\hspace{1mm}\solidrule[0.5mm]\hspace{1mm}\solidrule[2mm]}}
+
 % Automated file inclusion for code listings
 \makeatletter
 \def\includecode{\@ifnextchar[{\@with}{\@without}}
